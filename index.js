@@ -1,20 +1,26 @@
-const express = require('express');
-const axios = require('axios');
-require('dotenv').config();
+const express = require("express");
+const axios = require("axios");
+require("dotenv").config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-app.get('/', async (req, res) => {
-  const message = `🔔 RABBIT PANEL – TEST MESAJI\n\n🐇 Sistem Aktif!\n📡 Telegram bağlantısı başarılı şekilde kuruldu.\n\n🧠 Tospik seni tanıyor, sinyalleri izliyor ve anında bildirecek.\n\n⏱ Tarih: ${new Date().toLocaleString()}`;
-  const url = `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`;
-  await axios.post(url, {
-    chat_id: process.env.CHAT_ID,
-    text: message
-  });
-  res.send('Test mesajı gönderildi.');
+const TOKEN = process.env.BOT_TOKEN;
+const CHAT_ID = process.env.CHAT_ID;
+
+app.get("/", async (req, res) => {
+  try {
+    await axios.post(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+      chat_id: CHAT_ID,
+      text: "Tospik buradayım komutan! 🐇",
+    });
+
+    res.send("Test mesajı gönderildi.");
+  } catch (error) {
+    console.error("Mesaj gönderilemedi:", error);
+    res.status(500).send("Hata oluştu.");
+  }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+app.listen(3000, () => {
+  console.log("Bot sunucusu ayakta!");
 });
