@@ -42,3 +42,19 @@ app.post('/webhook', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+app.post('/webhook', async (req, res) => {
+  const message = '🔔 RABBIT PANEL - WEBHOOK MESAJI';
+  const url = `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`;
+
+  try {
+    await axios.post(url, {
+      chat_id: process.env.CHAT_ID,
+      text: message,
+    });
+
+    res.status(200).send('Webhook mesajı gönderildi.');
+  } catch (error) {
+    console.error('Hata:', error.response ? error.response.data : error.message);
+    res.status(500).send('Mesaj gönderilemedi.');
+  }
+});
