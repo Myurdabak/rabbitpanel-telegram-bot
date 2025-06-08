@@ -5,47 +5,47 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json()); // JSON body için middleware
+app.use(express.json());
 
-// Tarayıcıdan elle test için
+// Test mesajı için (tarayıcıdan erişimle çalışır)
 app.get('/', async (req, res) => {
   const message = '🔔 RABBIT PANEL - TEST MESAJI';
   const url = `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`;
-  
-  try {
-    await axios.post(url, {
-      chat_id: process.env.CHAT_ID,
-      text: message
-    });
-    res.send('Test mesajı gönderildi.');
-  } catch (error) {
-    console.error('Telegram gönderim hatası:', error.response?.data || error.message);
-    res.status(500).send('Mesaj gönderilemedi.');
-  }
+  await axios.post(url, {
+    chat_id: process.env.CHAT_ID,
+    text: message
+  });
+  res.send('Test mesajı gönderildi.');
 });
 
-// Webhook için gelen mesajları yakala
+// Webhook endpoint'i: JSON veri ile akıllı mesaj gönderir
 app.post('/webhook', async (req, res) => {
-  const { text } = req.body;
-
-  if (!text) {
-    return res.status(400).send('Hatalı veri: text eksik');
-  }
-
-  const url = `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`;
-
   try {
+    const { coin, fiyat, uyari_turu, adet, hedef_fiyat } = req.body;
+
+    if (!coin || !fiyat || !uyari_turu) {
+      return res.status(400).send('Eksik veri!');
+    }
+
+    const formattedMessage = `
+🚨 ${uyari_turu.toUpperCase()}: ${coin}
+💰 Mevcut Fiyat: ${fiyat} USDT
+${hedef_fiyat ? `🎯 Hedef Fiyat: ${hedef_fiyat} USDT\n` : ''}${adet ? `📦 Adet: ${adet.toLocaleString()}` : ''}
+    `;
+
+    const url = `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`;
     await axios.post(url, {
       chat_id: process.env.CHAT_ID,
-      text
+      text: formattedMessage.trim(),
     });
-    res.send('Webhook mesajı gönderildi.');
+
+    res.send('Mesaj başarıyla gönderildi.');
   } catch (error) {
-    console.error('Webhook mesaj hatası:', error.response?.data || error.message);
-    res.status(500).send('Webhook mesajı gönderilemedi.');
+    console.error('Webhook hatası:', error.message);
+    res.status(500).send('Bir hata oluştu.');
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Sunucu port ${PORT} üzerinde çalışıyor`);
+  console.log(`Server is running on port ${PORT}`);
 });
