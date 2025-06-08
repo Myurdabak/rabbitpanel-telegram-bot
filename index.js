@@ -5,13 +5,13 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json()); // JSON gövde verisi için middleware
+app.use(express.json()); // JSON body için middleware
 
-// Tarayıcıdan test için GET endpoint
+// Tarayıcıdan elle test için
 app.get('/', async (req, res) => {
   const message = '🔔 RABBIT PANEL - TEST MESAJI';
   const url = `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`;
-
+  
   try {
     await axios.post(url, {
       chat_id: process.env.CHAT_ID,
@@ -19,12 +19,12 @@ app.get('/', async (req, res) => {
     });
     res.send('Test mesajı gönderildi.');
   } catch (error) {
-    console.error('Test mesajı gönderilemedi:', error.message);
-    res.status(500).send('Test mesajı gönderilemedi.');
+    console.error('Telegram gönderim hatası:', error.response?.data || error.message);
+    res.status(500).send('Mesaj gönderilemedi.');
   }
 });
 
-// Rabbit Panel için POST endpoint
+// Webhook için gelen mesajları yakala
 app.post('/webhook', async (req, res) => {
   const { text } = req.body;
 
@@ -37,16 +37,15 @@ app.post('/webhook', async (req, res) => {
   try {
     await axios.post(url, {
       chat_id: process.env.CHAT_ID,
-      text: text
+      text
     });
-    res.send('Mesaj gönderildi.');
+    res.send('Webhook mesajı gönderildi.');
   } catch (error) {
-    console.error('Telegram gönderim hatası:', error.response ? error.response.data : error.message);
-    res.status(500).send('Mesaj gönderilemedi.');
+    console.error('Webhook mesaj hatası:', error.response?.data || error.message);
+    res.status(500).send('Webhook mesajı gönderilemedi.');
   }
 });
 
-// Sunucuyu başlat
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Sunucu port ${PORT} üzerinde çalışıyor`);
 });
