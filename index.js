@@ -1,51 +1,50 @@
 const express = require('express');
 const axios = require('axios');
 require('dotenv').config();
+require('./rabbitScheduler'); // Zamanlayıcıyı dahil ediyoruz
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
+// Tarayıcıdan test için GET endpoint
 app.get('/', async (req, res) => {
   const message = '🔔 RABBIT PANEL - TEST MESAJI';
   const url = `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`;
-  await axios.post(url, {
-    chat_id: process.env.CHAT_ID,
-    text: message
-  });
-  res.send('Test mesajı gönderildi.');
+
+  try {
+    await axios.post(url, {
+      chat_id: process.env.CHAT_ID,
+      text: message
+    });
+    res.send('Test mesajı gönderildi.');
+  } catch (error) {
+    console.error('Hata:', error.response ? error.response.data : error.message);
+    res.status(500).send('Mesaj gönderilemedi.');
+  }
 });
 
+// Dış sistemlerden gelen verileri Telegram'a yönlendirmek için webhook
 app.post('/webhook', async (req, res) => {
-  const { coin, fiyat, uyari_turu, adet, hedef_fiyat } = req.body;
+  const { text } = req.body;
 
-  if (!coin || !fiyat || !uyari_turu || !adet || !hedef_fiyat) {
-    return res.status(400).send('Eksik veri!');
-  }
-
-  const formattedMessage = `
-🔺 ${uyari_turu}: ${coin}
-💲 Mevcut Fiyat: ${fiyat} USDT
-🎯 Hedef Fiyat: ${hedef_fiyat} USDT
-📦 Adet: ${adet.toLocaleString('tr-TR')}
-  `;
+  if (!text) return res.status(400).send('Hatalı veri: text eksik');
 
   const url = `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`;
 
   try {
     await axios.post(url, {
       chat_id: process.env.CHAT_ID,
-      text: formattedMessage
+      text
     });
-    res.status(200).send('Webhook mesajı gönderildi.');
+    res.send('Mesaj gönderildi.');
   } catch (error) {
-    console.error('Telegram gönderim hatası:', error.response?.data || error.message);
+    console.error('Telegram gönderim hatası:', error);
     res.status(500).send('Mesaj gönderilemedi.');
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`✅ Sunucu ${PORT} portunda çalışıyor.`);
 });
-require('./rabbitScheduler'); // Günlük otomatik mesaj modülü
